@@ -14,18 +14,15 @@
 
 package au.com.cba.omnia.maestro.task
 
-import java.sql.Timestamp
-
 import scala.util.matching.Regex
 
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.DateTime
 
 import scalaz.Monoid
 
 import com.twitter.scrooge.ThriftStruct
 
-import com.twitter.scalding.{Args, Config, Mode, TupleSetter}
-import com.twitter.scalding.typed.TypedPipe
+import com.twitter.scalding.{Config, TupleSetter}
 
 import au.com.cba.omnia.parlour.{ParlourExportOptions, ParlourImportOptions}
 
@@ -39,6 +36,15 @@ import au.com.cba.omnia.maestro.core.upload.ControlPattern
 import au.com.cba.omnia.maestro.core.validate.Validator
 import au.com.cba.omnia.maestro.hive.HiveTable
 
+trait EtlEnvVal {
+  val hdfRoot: String
+  val localRoot: String
+  val localArchiveDir: String
+  val dbRawPrefix: String
+  val dbStagingPrefix: String
+  val dbDerivedPrefix: String
+}
+
 /**
   * Core configuration settings for loads, and factory functions for
   * task specific configurations.
@@ -48,22 +54,23 @@ case class MaestroConfig(
   source: String,
   domain: String,
   tablename: String,
-  hdfsRoot: String,
-  loadTime: DateTime
+  loadTime: DateTime,
+  etlEnvVal: EtlEnvVal
 ) { self =>
   val args = conf.getArgs
 
   /** The standard directory structure: `\$source/\$domain/\$tablename` */
+  val hdfsRoot        = etlEnvVal.hdfRoot
   val dirStructure    = s"${source}/${domain}/${tablename}"
   val hdfsLandingPath = s"$hdfsRoot/source/$dirStructure"
   val hdfsArchivePath = s"$hdfsRoot/archive/$dirStructure"
 
   /** Standard command line arguments, not required unless used */
-  lazy val localIngestDir  = args("local-root")
-  lazy val localArchiveDir = args("archive-root")
-  lazy val dbRawPrefix     = args("db-raw-prefix")
+  lazy val localIngestDir  = etlEnvVal.localRoot
+  lazy val localArchiveDir = etlEnvVal.localArchiveDir
+  lazy val dbRawPrefix     = etlEnvVal.dbRawPrefix
+  lazy val dbStagingPrefix = etlEnvVal.dbStagingPrefix
   lazy val dbRaw           = s"${dbRawPrefix}_${source}_${domain}"
-  lazy val dbStagingPrefix = args("db-stg-prefix")
   lazy val dbStaging       = s"${dbStagingPrefix}_${source}_${domain}"
   lazy val connString      = args("jdbc")
   lazy val username        = args("db-user")
@@ -230,7 +237,7 @@ case class MaestroConfig(
 }
 
 object MaestroConfig {
-  def apply(conf: Config, source: String, domain: String, tablename: String): MaestroConfig = {
-    MaestroConfig(conf, source, domain, tablename, conf.getArgs("hdfs-root"), DateTime.now)
+  def apply(conf: Config, source: String, domain: String, tablename: String, envVal: EtlEnvVal): MaestroConfig = {
+    MaestroConfig(conf, source, domain, tablename, DateTime.now, envVal)
   }
 }
