@@ -54,10 +54,10 @@ Customer Sqoop Import Job test
     SqoopExecutionTest.setupEnv()
 
     val args = Map(
-      "hdfs-root"     -> List(s"$dir/user/hdfs"),
-      "jdbc"          -> List(connectionString),
-      "db-user"       -> List(username),
-      "db-raw-prefix" -> List(dbRawPrefix)
+      "jdbc"     -> List(connectionString),
+      "db-user"  -> List(username),
+      "env"      -> List("LOCAL_TEST"),
+      "testPath" -> List(dir)
     )
 
     withEnvironment(path(getClass.getResource("/sqoop-customer/import").toString)) {

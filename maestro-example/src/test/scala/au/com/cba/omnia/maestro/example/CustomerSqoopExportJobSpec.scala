@@ -49,11 +49,10 @@ CustomerSqoopExportJobSpec test
 
     withEnvironment(path(getClass.getResource("/sqoop-customer").toString)) {
       val args = Map(
-        "hdfs-root"     -> List(s"$dir/user"),
-        "jdbc"          -> List(connectionString),
-        "db-user"       -> List(username),
-        "local-root"    -> List(s"$dir/user"),
-        "archive-root"  -> List(s"$dir/user/archive")
+        "jdbc"     -> List(connectionString),
+        "db-user"  -> List(username),
+        "env"      -> List("LOCAL_TEST"),
+        "testPath" -> List(dir)
       )
 
       executesOk(CustomerSqoopExportJob.job, args)

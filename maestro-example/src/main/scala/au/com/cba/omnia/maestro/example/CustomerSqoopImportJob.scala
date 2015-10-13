@@ -23,11 +23,15 @@ import au.com.cba.omnia.maestro.example.thrift.Customer
 
 /** Configuration for `CustomerSqoopImportExecution` */
 case class CustomerImportConfig(config: Config) {
+  val testPath = config.getArgs.optional("testPath")
+  val envValue = EtlEnvValues.getEnvVal("LOCAL_TEST", testPath)
+
   val maestro     = MaestroConfig(
-    conf          = config,
-    source        = "sales",
-    domain        = "books",
-    tablename     = "customer_import"
+    conf      = config,
+    source    = "sales",
+    domain    = "books",
+    tablename = "customer_import",
+    envVal    = envValue
   )
   val sqoopImport  = maestro.sqoopImport(
     initialOptions = Some(ParlourImportDsl().splitBy("id"))

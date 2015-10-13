@@ -22,11 +22,15 @@ import au.com.cba.omnia.maestro.macros.automap
 
 /** Configuration for a customer execution example */
 case class CustomerAutomapConfig(config: Config) {
+  val testPath = config.getArgs.optional("testPath")
+  val envValue = EtlEnvValues.getEnvVal("LOCAL_TEST", testPath)
+
   val maestro   = MaestroConfig(
-    conf        = config,
-    source      = "customer",
-    domain      = "customer",
-    tablename   = "customer"
+    conf      = config,
+    source    = "customer",
+    domain    = "customer",
+    tablename = "customer",
+    envVal    = envValue
   )
   val upload    = maestro.upload()
   val load      = maestro.load[Customer](none = "null")

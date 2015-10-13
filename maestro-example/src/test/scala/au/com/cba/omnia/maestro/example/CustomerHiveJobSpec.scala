@@ -47,10 +47,8 @@ Customer Hive Job
 
     withEnvironment(path(getClass.getResource("/customer").toString)) {
       val args = Map(
-        "hdfs-root"     -> List(s"$dir/user"),
-        "local-root"    -> List(s"$dir/user"),
-        "archive-root"  -> List(s"$dir/user/archive"),
-        "db-raw-prefix" -> List(dbRawprefix)
+        "env"            -> List("LOCAL_TEST"),
+        "testPath"       -> List(dir)
       )
       executesSuccessfully(CustomerHiveJob.job, args) must_== JobFinished
 
