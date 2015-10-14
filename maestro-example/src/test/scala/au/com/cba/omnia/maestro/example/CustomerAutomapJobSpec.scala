@@ -43,8 +43,7 @@ Customer Automap Job
 
     withEnvironment(path(getClass.getResource("/customer").toString)) {
       val args = Map(
-        "env"            -> List("LOCAL_TEST"),
-        "testPath"       -> List(dir)
+        "env"            -> List("LOCAL_TEST")
       )
       executesSuccessfully(CustomerAutomapJob.job, args) must_== JobFinished
 

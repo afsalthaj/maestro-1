@@ -26,8 +26,7 @@ import au.com.cba.omnia.maestro.example.thrift.Customer
 
 /** Configuration for a customer execution example */
 case class CustomerHiveConfig(config: Config) {
-  val testPath = config.getArgs.optional("testPath")
-  val envValue = EtlEnvValues.getEnvVal("LOCAL_TEST", testPath)
+  val envValue = EtlEnvValues.getEnvVal("LOCAL_TEST")
 
   val maestro   = MaestroConfig(
     conf      = config,

@@ -51,8 +51,7 @@ CustomerSqoopExportJobSpec test
       val args = Map(
         "jdbc"     -> List(connectionString),
         "db-user"  -> List(username),
-        "env"      -> List("LOCAL_TEST"),
-        "testPath" -> List(dir)
+        "env"      -> List("LOCAL_TEST")
       )
 
       executesOk(CustomerSqoopExportJob.job, args)

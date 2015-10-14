@@ -22,8 +22,7 @@ import au.com.cba.omnia.maestro.macros.automap
 
 /** Configuration for a customer execution example */
 case class CustomerAutomapConfig(config: Config) {
-  val testPath = config.getArgs.optional("testPath")
-  val envValue = EtlEnvValues.getEnvVal("LOCAL_TEST", testPath)
+  val envValue = EtlEnvValues.getEnvVal("LOCAL_TEST")
 
   val maestro   = MaestroConfig(
     conf      = config,
