@@ -55,21 +55,21 @@ case class MaestroConfig(
   domain: String,
   tablename: String,
   loadTime: DateTime,
-  etlEnvVal: EnvVal
+  envVal: EnvVal
 ) { self =>
   val args = conf.getArgs
 
-  val hdfsRoot        = etlEnvVal.hdfRoot
+  val hdfsRoot        = envVal.hdfRoot
   /** The standard directory structure: `\$source/\$domain/\$tablename` */
   val dirStructure    = s"${source}/${domain}/${tablename}"
   val hdfsLandingPath = s"$hdfsRoot/source/$dirStructure"
   val hdfsArchivePath = s"$hdfsRoot/archive/$dirStructure"
 
   /** Standard command line arguments, not required unless used */
-  lazy val localIngestDir  = etlEnvVal.localRoot
-  lazy val localArchiveDir = etlEnvVal.localArchiveDir
-  lazy val dbRawPrefix     = etlEnvVal.dbRawPrefix
-  lazy val dbStagingPrefix = etlEnvVal.dbStagingPrefix
+  lazy val localIngestDir  = envVal.localRoot
+  lazy val localArchiveDir = envVal.localArchiveDir
+  lazy val dbRawPrefix     = envVal.dbRawPrefix
+  lazy val dbStagingPrefix = envVal.dbStagingPrefix
   lazy val dbRaw           = s"${dbRawPrefix}_${source}_${domain}"
   lazy val dbStaging       = s"${dbStagingPrefix}_${source}_${domain}"
   lazy val connString      = args("jdbc")

@@ -54,9 +54,9 @@ Customer Sqoop Import Job test
     SqoopExecutionTest.setupEnv()
 
     val args = Map(
-      "jdbc"     -> List(connectionString),
-      "db-user"  -> List(username),
-      "env"      -> List("LOCAL_TEST")
+      "jdbc"    -> List(connectionString),
+      "db-user" -> List(username),
+      "env"     -> List("LOCAL_TEST")
     )
 
     withEnvironment(path(getClass.getResource("/sqoop-customer/import").toString)) {

@@ -49,9 +49,9 @@ CustomerSqoopExportJobSpec test
 
     withEnvironment(path(getClass.getResource("/sqoop-customer").toString)) {
       val args = Map(
-        "jdbc"     -> List(connectionString),
-        "db-user"  -> List(username),
-        "env"      -> List("LOCAL_TEST")
+        "jdbc"    -> List(connectionString),
+        "db-user" -> List(username),
+        "env"     -> List("LOCAL_TEST")
       )
 
       executesOk(CustomerSqoopExportJob.job, args)

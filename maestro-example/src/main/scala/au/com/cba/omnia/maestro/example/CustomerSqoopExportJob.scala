@@ -23,9 +23,8 @@ import au.com.cba.omnia.maestro.example.thrift.Customer
  
 /** Sample configuration for exporting data via sqoop. */
 case class CustomerExportConfig(config: Config) {
-  val envValue = EtlEnvValues.getEnvVal("LOCAL_TEST")
-
-  val maestro   = MaestroConfig(
+  val envValue = EtlEnvValues.getEnvVal(config.getArgs("LOCAL_TEST"))
+  val maestro  = MaestroConfig(
     conf      = config,
     source    = "customer",
     domain    = "customer",
