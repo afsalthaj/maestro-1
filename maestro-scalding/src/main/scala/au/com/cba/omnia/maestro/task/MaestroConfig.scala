@@ -36,7 +36,7 @@ import au.com.cba.omnia.maestro.core.upload.ControlPattern
 import au.com.cba.omnia.maestro.core.validate.Validator
 import au.com.cba.omnia.maestro.hive.HiveTable
 
-trait EtlEnvVal {
+trait EnvVal {
   val hdfRoot: String
   val localRoot: String
   val localArchiveDir: String
@@ -55,12 +55,12 @@ case class MaestroConfig(
   domain: String,
   tablename: String,
   loadTime: DateTime,
-  etlEnvVal: EtlEnvVal
+  etlEnvVal: EnvVal
 ) { self =>
   val args = conf.getArgs
 
-  /** The standard directory structure: `\$source/\$domain/\$tablename` */
   val hdfsRoot        = etlEnvVal.hdfRoot
+  /** The standard directory structure: `\$source/\$domain/\$tablename` */
   val dirStructure    = s"${source}/${domain}/${tablename}"
   val hdfsLandingPath = s"$hdfsRoot/source/$dirStructure"
   val hdfsArchivePath = s"$hdfsRoot/archive/$dirStructure"
@@ -237,7 +237,7 @@ case class MaestroConfig(
 }
 
 object MaestroConfig {
-  def apply(conf: Config, source: String, domain: String, tablename: String, envVal: EtlEnvVal): MaestroConfig = {
+  def apply(conf: Config, source: String, domain: String, tablename: String, envVal: EnvVal): MaestroConfig = {
     MaestroConfig(conf, source, domain, tablename, DateTime.now, envVal)
   }
 }
