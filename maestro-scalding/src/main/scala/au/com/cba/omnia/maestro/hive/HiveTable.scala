@@ -28,6 +28,7 @@ import com.twitter.scrooge.ThriftStruct
 import au.com.cba.omnia.permafrost.hdfs.Hdfs
 
 import au.com.cba.omnia.ebenezer.scrooge.ParquetScroogeSource
+import au.com.cba.omnia.ebenezer.scrooge.PartitionParquetScroogeSource
 import au.com.cba.omnia.ebenezer.scrooge.hive._
 
 import au.com.cba.omnia.maestro.core.partition.Partition
@@ -82,7 +83,7 @@ case class PartitionedHiveTable[A <: ThriftStruct : Manifest, B : Manifest : Tup
     def write(path: Option[String]) =
       pipe
       .map(v => partition.extract(v) -> v)
-      .writeExecution(PartitionHiveParquetScroogeSink[B, A](database, table, partitionMetadata, path, append))
+      .writeExecution(PartitionParquetScroogeSource[B, A](partition.pattern, path.get.toString))
       .getAndResetCounters
       .map(_._2)
 
@@ -90,6 +91,7 @@ case class PartitionedHiveTable[A <: ThriftStruct : Manifest, B : Manifest : Tup
       for {
         _        <- setup
         counters <- write(externalPath).withSubConfig(modifyConfig)
+        _        <- Execution.fromHive(Hive.query(s"msck repair table $database.$table"))
       } yield counters
     } else {
       for {
