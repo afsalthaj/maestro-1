@@ -37,7 +37,8 @@ case class PartitionJobConfig(config: Config) {
   val nRecords       = 10000
   val customerTable  = maestro.partitionedHiveTable[Customer, Int](
     partition   = Partition.byField(Fields[Customer].Balance),
-    tablename   = "by_balance"
+    tablename   = "by_balance",
+    path        = Some("/tmp/maestro/")
   )
 }
 
