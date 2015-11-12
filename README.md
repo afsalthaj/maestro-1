@@ -334,3 +334,7 @@ Validator.all(
   Validator.by[Customer](_.customerAcct.length == 4, "Customer accounts should always be a length of 4")
 )
 ```
+
+acknowledgement
+---------------
+We would like to thank the YourKit team for their support in providing us with their excellent [Java Profiler](https://www.yourkit.com/java/profiler/index.jsp). 
