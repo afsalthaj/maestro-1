@@ -28,17 +28,17 @@ import au.com.cba.omnia.maestro.example.thrift.Customer
 /** Configuration for a customer execution example */
 case class PartitionJobConfig(config: Config) {
   val maestro = MaestroConfig(
-    conf      = config,
+    conf      = config + (("hive.metastore.execute.setugi","true")),
     source    = "customer",
     domain    = "customer",
     tablename = "customer"
   )
-  val nPartitions    = 100
-  val nRecords       = 10000
+  val nPartitions    = config.getArgs.int("num-partitions")
+  val nRecords       = config.getArgs.int("num-records")
   val customerTable  = maestro.partitionedHiveTable[Customer, Int](
     partition   = Partition.byField(Fields[Customer].Balance),
     tablename   = "by_balance",
-    path        = Some("/tmp/maestro/")
+    path        = Some(maestro.hdfsRoot)
   )
 }
 
@@ -57,3 +57,4 @@ object PartitionJob extends MaestroJob {
 
   def attemptsExceeded = Execution.from(JobNeverReady)   // Elided in the README
 }
+
