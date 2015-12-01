@@ -14,7 +14,7 @@
 
 package au.com.cba.omnia.maestro.hive
 
-import scalaz.Scalaz._
+import scalaz._, Scalaz._
 
 import org.apache.hadoop.fs.Path
 
@@ -67,6 +67,7 @@ case class PartitionedHiveTable[A <: ThriftStruct : Manifest, B : Manifest : Tup
   val partitionMetadata: List[(String, String)] = partition.fieldNames.map(n => (n, "string"))
   //Enforce the Hive partition pattern
   val hivePartitionPattern: String = partition.fieldNames.map(_ + "=%s").mkString("/")
+  val hdfsPartitionPattern: String = hivePartitionPattern.replaceAll("""[^=/]+=[^/]+""","*")
 
   override def source: PartitionParquetScroogeSource[B, A] =
     PartitionParquetScroogeSource[B, A](hivePartitionPattern, tablePath.toString)
@@ -74,13 +75,29 @@ case class PartitionedHiveTable[A <: ThriftStruct : Manifest, B : Manifest : Tup
   override def writeExecution(pipe: TypedPipe[A], append: Boolean = true): Execution[ExecutionCounters] = {
     def modifyConfig(config: Config) = ConfHelper.createUniqueFilenames(config)
 
+    def addPartitions(db: String, table: String, partitionColumnNames: List[String], paths: List[String]): Hive[Unit] = Hive.value(())
+    
+    val batchSize = 100
+
+    def registerNewPartitions(paths: List[Path]) =
+      paths.map(_.toString)
+        .grouped(batchSize)
+        .map(addPartitions(database, table, partition.fieldNames, _))
+        .map(Execution.hive(_))
+        .toList
+        .sequence
+
     def withTable(ops: Path => Execution[ExecutionCounters]): Execution[ExecutionCounters] =
       for {
-        _       <- Execution.hive(Hive.createParquetTable[A](database, table, partitionMetadata, externalPath.map(new Path(_)))) 
-       location <- Execution.hive(Hive.getPath(database, table))
-       counter  <- ops(location)
-        _       <- Execution.hdfs(Hdfs.delete(new Path(location, new Path("_temporary")), true))
-        _       <- Execution.hive(Hive.repair(database, table))
+        _        <- Execution.hive(Hive.createParquetTable[A](database, table, partitionMetadata, externalPath.map(new Path(_))))
+        location <- Execution.hive(Hive.getPath(database, table))
+        existing <- Execution.hdfs(Hdfs.glob(location, hdfsPartitionPattern))
+        counter  <- ops(location)
+        _        <- Execution.hdfs(Hdfs.delete(new Path(location, new Path("_temporary")), true))
+        folders  <- Execution.hdfs(Hdfs.glob(location, hdfsPartitionPattern))
+        created   = folders.diff(existing)
+        _        <- registerNewPartitions(created)
+        _        <- Execution.hive(Hive.repair(database, table))
       } yield counter
 
     // Runs the scalding job and gets the counters
