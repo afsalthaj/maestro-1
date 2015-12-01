@@ -187,8 +187,11 @@ object build extends Build {
     ++ uniform.project("maestro-example", "au.com.cba.omnia.maestro.example")
     ++ uniformAssemblySettings
     ++ uniformThriftSettings
+    ++ humbugSettings
     ++ Seq[Sett](
-         libraryDependencies ++= depend.hadoopClasspath ++ depend.hadoop() ++ depend.parquet() ++ Seq(
+         scroogeThriftSourceFolder in Compile <<= (sourceDirectory) { _ / "main" / "thrift" / "scrooge" }
+       , humbugThriftSourceFolder in Compile <<= (sourceDirectory) { _ / "main" / "thrift" / "humbug" }
+       , libraryDependencies ++= depend.hadoopClasspath ++ depend.hadoop() ++ depend.parquet() ++ Seq(
            scalikejdbc % "test"
          )
        , parallelExecution in Test := false

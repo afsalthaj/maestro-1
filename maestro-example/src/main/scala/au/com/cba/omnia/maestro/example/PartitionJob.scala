@@ -31,28 +31,33 @@ import au.com.cba.omnia.omnitool.{Result, Ok, Error}
 import au.com.cba.omnia.maestro.api._, Maestro._
 import au.com.cba.omnia.maestro.scalding.ConfHelper
 
-import au.com.cba.omnia.maestro.example.thrift.Customer
+import au.com.cba.omnia.maestro.example.thrift.BigThing
 
 /** Configuration for a customer execution example */
 case class PartitionJobConfig(config: Config) {
   val maestro = MaestroConfig(
     conf      = config + (("hive.metastore.execute.setugi","true")),
-    source    = "customer",
-    domain    = "customer",
-    tablename = "customer"
+    source    = "test",
+    domain    = "test",
+    tablename = "test"
   )
-  val nPartitions = config.getArgs.int("num-partitions")
-  val nRecords    = config.getArgs.int("num-records")
-  val table       = maestro.partitionedHiveTable[Customer, Int](
-    partition = Partition.byField(Fields[Customer].Balance),
-    tablename = "by_balance",
+  val nPartitions   = config.getArgs.int("num-partitions")
+  val partitionSize = config.getArgs.int("partition-size")
+  val batchSize     = config.getArgs.int("batch-size")
+  val withQueries   = config.getArgs.boolean("with-queries")
+  
+  val table = maestro.partitionedHiveTable[BigThing, Int](
+    partition = Partition.byField(Fields[BigThing].Column1),
+    tablename = "by_col1",
     path      = Some(maestro.hdfsRoot)
   )
 }
 
 object PartitionJob extends MaestroJob {
-  
-  def spawnQueryThread(conf: PartitionJobConfig) = {
+ 
+  val dummyData = Stream.fill(499)("x").toList
+ 
+  def spawnQueryThread(conf: PartitionJobConfig): Unit = if (!conf.withQueries) () else {
     logger.info("Starting query loop.")
     val hiveConf = new HiveConf(ConfHelper.getHadoopConf(conf.config), this.getClass)
     val queriesTask = Future{
@@ -66,19 +71,30 @@ object PartitionJob extends MaestroJob {
         Thread.sleep(5000)
       }
     }
+    ()
   }
+
+  def generateRecords(n: Int, offset: Int, partitionSize: Int): Stream[BigThing] =
+    Stream.from(offset)
+      .map(i => { val x = new BigThing; x.column1 = i; x })
+      .take(n)
+      
+  def createPipe(n: Int, offset: Int, partitionSize: Int): TypedPipe[BigThing] =
+    TypedPipe.from(generateRecords(n, offset, partitionSize))
+      .groupBy((x:BigThing) => x.column1)
+      .forceToReducers
+      .map{ case (k,v) => v }
+
+  def createExecutions(conf: PartitionJobConfig): Stream[Execution[Long]] =
+    Stream.from(0, conf.batchSize)
+      .map(createPipe(conf.batchSize, _, conf.partitionSize))
+      .map(viewHive(conf.table, _))
+      .take(conf.partitionSize * conf.nPartitions / conf.batchSize)
 
   def job: Execution[JobStatus] = for {
     conf  <- Execution.getConfig.map(PartitionJobConfig(_))
     _     <- Execution.value(spawnQueryThread(conf))
-    pipe   = TypedPipe.from(
-      Stream.from(1)
-        .map(i => Customer(s"$i", None, "", "", "", i % conf.nPartitions, ""))
-        .take(conf.nRecords)
-    ).groupBy((x:Customer) => x.balance)
-     .forceToReducers
-     .map{ case (k,v) => v }
-    count <- viewHive(conf.table, pipe) 
+    _     <- createExecutions(conf).sequence
   } yield JobFinished
 
   def attemptsExceeded = Execution.from(JobNeverReady)   // Elided in the README
