@@ -45,6 +45,13 @@ private object ViewExec extends ViewExecution
 object ViewExecutionSpec extends ThermometerHiveSpec with ParquetLogging { def is = s2"""
 View execution properties
 =========================
+    can append to a hive table using parallel execution                    $sequencedHiveAppend
+
+"""
+
+def skippedTests = s2"""
+View execution properties
+=========================
 
   partitioned:
     can write using execution monad                                      $normal
@@ -102,7 +109,7 @@ View execution properties
     } yield (a, b)
 
     executesSuccessfully(exec) must_== ((4, 4))
- 
+
     facts(
       hiveWarehouse </> "normalhive.db"  </> "by_first" </> "partition_first=A" </> "part-*.parquet" ==> matchesFile,
       hiveWarehouse </> "normalhive.db"  </> "by_first" </> "partition_first=B" </> "part-*.parquet" ==> matchesFile,
@@ -177,8 +184,22 @@ View execution properties
       .zip(ViewExec.viewHive(tableByFirst("zippedHive"), source))
     executesSuccessfully(exec) must_== ((4, 4))
     facts(
-      hiveWarehouse </> "zippedhive.db" </> "by_first"  </> "partition_first=A"  </> "part-*.parquet" ==> matchesFile,
-      hiveWarehouse </> "zippedhive.db" </> "by_first"  </> "partition_first=B"  </> "part-*.parquet" ==> matchesFile
+      hiveWarehouse </> "zippedhive.db" </> "by_first"  </> "partition_first=A"  </> "part-*.parquet" ==> recordCount(ParquetThermometerRecordReader[StringPair], 4),
+      hiveWarehouse </> "zippedhive.db" </> "by_first"  </> "partition_first=B"  </> "part-*.parquet" ==> recordCount(ParquetThermometerRecordReader[StringPair], 4)
+    )
+  }
+
+  def sequencedHiveAppend = {
+    val sequenceLength = 20
+    val tuplesPerViewHive = 50000
+    def exec(offset: Int) = List.tabulate(sequenceLength)((i: Int) => ViewExec.viewHive(
+      tableByFirst("zippedHive"),
+      ThermometerSource(Seq.tabulate(tuplesPerViewHive)((j: Int) => StringPair("A", (i*tuplesPerViewHive + j + offset).toString)))
+    )).sequence
+
+    executesSuccessfully(exec(0) zip exec(sequenceLength * tuplesPerViewHive))
+    facts(
+      hiveWarehouse </> "zippedhive.db" </> "by_first"  </> "partition_first=A"  </> "part-*.parquet" ==> recordCount(ParquetThermometerRecordReader[StringPair], sequenceLength * tuplesPerViewHive * 2)
     )
   }
 
