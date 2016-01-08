@@ -19,7 +19,7 @@ import scala.concurrent.Future
 import scalaz.{\/, Monad}
 import scalaz.\&/.{These, This, That, Both}
 
-import com.twitter.scalding.{Config, Execution}
+import com.twitter.scalding.{Args, Config, Execution}
 
 import org.apache.hadoop.hive.conf.HiveConf
 
@@ -35,6 +35,11 @@ case class RichExecution[A](execution: Execution[A]) {
     Execution.getConfigMode.flatMap { case (config, mode) =>
       Execution.fromFuture(cec => execution.run(modifyConfig(config), mode)(cec))
     }
+
+  /** Modify args only */
+  def withSubArgs(modifyArgs: Args => Args): Execution[A] = {
+    withSubConfig(config => config.setArgs(modifyArgs(config.getArgs)))
+  }
 }
 
 /** Pimps the Execution object. */
