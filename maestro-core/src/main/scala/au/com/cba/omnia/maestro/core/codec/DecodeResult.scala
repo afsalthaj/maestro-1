@@ -21,9 +21,18 @@ import scalaz._, Scalaz._, \&/._
 import shapeless.{ProductTypeClass, TypeClassCompanion}
 
 sealed trait Reason
-case class ParseError(value: String, expected: String, error: These[String, Throwable]) extends Reason
-case class NotEnoughInput(required: Int, expected: String) extends Reason
-case object TooMuchInput extends Reason
+
+case class ParseError(value: String, expected: String, error: These[String, Throwable]) extends Reason {
+ override def toString = s"unexpected type: value: $value, expected: $expected"
+}
+
+case class NotEnoughInput(required: Int, expected: String) extends Reason {
+  override def toString = s"not enough fields in record. Required: $required, expected: $expected"
+}
+
+case object TooMuchInput extends Reason {
+  override def toString = "too many fields in record"
+}
 
 sealed trait DecodeResult[A] {
   def fold[X](ok: A => X, error: (List[String], Int, Reason) => X): X = this match {
@@ -39,7 +48,10 @@ sealed trait DecodeResult[A] {
 }
 
 case class DecodeOk[A](value: A) extends DecodeResult[A]
-case class DecodeError[A](remainder: List[String], counter: Int, reason: Reason) extends DecodeResult[A]
+
+case class DecodeError[A](remainder: List[String], counter: Int, reason: Reason) extends DecodeResult[A] {
+  override def toString =  s"could not decode the data set $remainder: reason.toString"
+}
 
 object DecodeResult {
   def ok[A](a: A): DecodeResult[A] =
