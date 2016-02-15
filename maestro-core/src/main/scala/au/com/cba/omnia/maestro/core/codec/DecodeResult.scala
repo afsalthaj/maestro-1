@@ -23,11 +23,11 @@ import shapeless.{ProductTypeClass, TypeClassCompanion}
 sealed trait Reason
 
 case class ParseError(value: String, expected: String, error: These[String, Throwable]) extends Reason {
- override def toString = s"unexpected type: value: $value, expected: $expected"
+  override def toString = s"unexpected type. Value: $value, Expected: $expected"
 }
 
 case class NotEnoughInput(required: Int, expected: String) extends Reason {
-  override def toString = s"not enough fields in record. Required: $required, expected: $expected"
+  override def toString = s"not enough fields in record. Required: $required, Expected: $expected"
 }
 
 case object TooMuchInput extends Reason {
@@ -50,7 +50,7 @@ sealed trait DecodeResult[A] {
 case class DecodeOk[A](value: A) extends DecodeResult[A]
 
 case class DecodeError[A](remainder: List[String], counter: Int, reason: Reason) extends DecodeResult[A] {
-  override def toString =  s"could not decode the data set $remainder: reason.toString"
+  override def toString = s"could not decode the data set $remainder: reason.toString"
 }
 
 object DecodeResult {
